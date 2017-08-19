@@ -292,7 +292,7 @@ discoveryBackend.healthcheck(results => {
 😁 DiscoveryBackend is { status: 'UP' }
 ```
 
-> Each **picoservice** service exposes a `/healthcheck` API and you can check it like this `curl http://localhost:9090/healthcheck` or using the `healthCheck` method of the service client
+> Each **picoservice** service exposes a `/healthcheck` API and you can check it like this `curl http://localhost:9090/healthcheck/<registration_id_if_registered>` or using the `healthCheck` method of the service client
 
 > ⚠️ **health checking** is important: eg you can check periodically the health of the discovery backend. If you detect that it has been restarted you can republish again your picoservice.
 
