@@ -228,7 +228,10 @@ class Service {
       method: "GET",
       f: (request, response) => {
         if(record) {
-          response.sendJson({status: this.record.status, registration: this.record.registration})
+          response.sendJson({
+            status: this.record.status, 
+            registration: this.record.registration
+          })
         } else {
           // eg: for the DiscoveryBackenServer
           response.sendJson({status: "UP"})
@@ -258,6 +261,7 @@ class Service {
   }
 
   createRegistration(callBack) {
+    this.record.date = new Date()
     this.discoveryBackend.createRegistration(this.record, registrationResult => {
       registrationResult.when({
         Success: registrationId => {
@@ -278,7 +282,7 @@ class Service {
 
 
   updateRegistration(callBack) {
-
+    this.record.date = new Date()    
     this.discoveryBackend.updateRegistration(this.record, registrationResult => {
       
       registrationResult.when({
@@ -407,41 +411,6 @@ class DiscoveryBackendServer {
     }})
 
   }
-
-  // remove phantom services
-  watchServiceList({interval}) {
-    let servicesList = this.servicesDirectory
-    function clean() {
-      //var d = new Date();
-      for(var keyServices in servicesList) { 
-        console.log(keyServices) 
-        console.log(" -", servicesList[keyServices])
-        servicesList[keyServices].forEach(service => {
-          let client = new Client({service: service})
-          client.healthCheck()
-            .then(data => {
-              console.log("  =>", data)
-              // if data.registration <> service.registration => remove this service
-              if(data.registration!==service.registration) {
-                let index = servicesList[keyServices].indexOf(service)
-                if (index > -1) {
-                  servicesList[keyServices].splice(index, 1)
-                }
-              }
-            })
-            .catch(err => {
-              //TODO
-            })
-
-        })
-      }
-    }
-
-    let t = setInterval(clean, interval);
-    
-
-  }
-
 
   start({port}, callback) {
     this.service.start({port: port}, res => {

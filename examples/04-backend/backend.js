@@ -10,7 +10,6 @@ backend.start({port: port}, res => {
     Success: port => {
       console.log(`🌍 pico discovery backend server is started on ${port}`)
 
-      backend.watchServiceList({interval: 5000})
 
 
     }
