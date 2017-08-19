@@ -19,7 +19,9 @@ discoveryBackend.getServices({filter: service => service.name == "calc" },  resu
       let client = new Client({service: selectedService})
       
       // check that the service is ok and then call the service methods by name
-      client.healthCheck().then(res => {
+      client.healthCheck().then(check => {
+
+        console.log(check)
         
         client.callMethod({name:"add1", urlParams:[40,2]}).then(res => console.log(res)) // GET picoservice
 

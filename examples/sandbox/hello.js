@@ -50,10 +50,9 @@ service.createRegistration(res => {
           Failure: error => console.log("😡 Houston? We have a problem!"),
           Success: port => {
 
-            service.record.status = "UP"
+            service.record.metadata.message = "Hey 👋! What's up?"
             
             service.updateRegistration(res => {
-              
               res.when({
                 Failure: error => console.log("😡 updateRegistration", error),
                 Success: value => console.log("😍", value)

@@ -59,16 +59,6 @@ calcService.createRegistration(registration => {
 calcService.start({port: port}, res => {
   res.when({
     Failure: error => console.log("😡 Houston? We have a problem!"),
-    Success: port => {
-
-      calcService.record.status = "UP"      
-      calcService.updateRegistration(registration => {
-        registration.when({
-          Failure: error => console.log("😡 update registration is ko", error),
-          Success: value => console.log("😍 registration updated", value)
-        })
-      })
-      console.log(`🌍 calcService is listening on ${port}`)
-    }
+    Success: port => console.log(`🌍 calcService is listening on ${port}`)
   })
 })

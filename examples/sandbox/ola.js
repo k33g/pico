@@ -86,20 +86,7 @@ service.createRegistration(res => {
       service.start({port: port}, res => {
         res.when({
           Failure: error => console.log("😡 Houston? We have a problem!"),
-          Success: port => {
-
-            service.record.status = "UP"
-
-            service.updateRegistration(res => {
-              
-              res.when({
-                Failure: error => console.log("😡 updateRegistration", error),
-                Success: value => console.log("😍", value)
-              })
-            })
-            
-            console.log(`🌍 pico service ${record.name} is listening on ${port}`)
-          }
+          Success: port => console.log(`🌍 pico service ${record.name} is listening on ${port}`)
         })
       })
       /* service is started */
