@@ -394,3 +394,7 @@ Percentage of the requests served within a certain time (ms)
  100%    175 (longest request)
 ```
 
+## TODO
+
+- improve discovery backend server | add informations to avoid duplicate records when blue-green deployment or several instances
+- circuit breaker

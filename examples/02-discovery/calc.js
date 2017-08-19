@@ -41,7 +41,7 @@ calcService.get({uri:`/api/add`, f: (request, response) => {
 }})
 
 /**
- * usage: 
+ * usage:  curl -H "Content-Type: application/json" -X POST -d '{"a":21,"b":21}' http://localhost:9090/api/add
  */
 calcService.post({uri:`/api/add`, f: (request, response) => {
   let data = request.body
