@@ -88,7 +88,7 @@ class Client {
       host: serviceurl.hostname,
       port: serviceurl.port,
       method: "GET",
-      path: `/healthcheck`,
+      path: `/healthcheck` + service.registration ? `/${service.registration}` : ``,
       headers:  {"Content-Type": "application/json; charset=utf-8"}
     }).then(data => {
       return JSON.parse(data)
@@ -228,6 +228,10 @@ class Service {
       method: "GET",
       f: (request, response) => {
         if(record) {
+          let p = request.params[0]
+          if(this.record.registration!==p) {
+            this.record.status = "DOWN"
+          }
           response.sendJson({
             status: this.record.status, 
             registration: this.record.registration

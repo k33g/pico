@@ -398,3 +398,4 @@ Percentage of the requests served within a certain time (ms)
 
 - improve discovery backend server | add informations to avoid duplicate records when blue-green deployment or several instances
 - circuit breaker
+- do not prevent the start of the service when the backend is unreachable
