@@ -182,14 +182,15 @@ calcService.createRegistration(registration => {
   })
 })
 ```
-👋 you can update the record of the service with the `updateRegistration`, it's useful for specify the status of the service
+👋 you can update the record of the service with the `updateRegistration`, it's useful for add data to the record of the service:
 ```javascript
 calcService.start({port: port}, res => {
   res.when({
     Failure: error => console.log("😡 Houston? We have a problem!"),
     Success: port => {
 
-      calcService.record.status = "UP"      
+      calcService.record.metadata.message = "Hey 👋, how are you doing?" 
+
       calcService.updateRegistration(registration => {
         registration.when({
           Failure: error => console.log("😡 update registration is ko", error),
