@@ -1,0 +1,20 @@
+{
+  "name": "pico",
+  "version": "1.0.0",
+  "description": "HTTP picoservice",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/k33g/pico.git"
+  },
+  "keywords": [],
+  "author": "k33g",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/k33g/pico/issues"
+  },
+  "homepage": "https://github.com/k33g/pico#readme"
+}
