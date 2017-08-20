@@ -47,6 +47,13 @@ service.start({port: port}, res => {
     Failure: error => console.log("😡 Houston? We have a problem!"),
     Success: port => {
       console.log(`🌍 service is listening on ${port}`)
+
+      service.updateRegistration(registration => {
+        registration.when({
+          Failure: error => console.log("😡 update registration is ko", error),
+          Success: value => console.log("😍 registration updated", value)
+        })
+      })
     }
   })
 })

@@ -292,45 +292,45 @@ discoveryBackend.healthcheck(results => {
 😁 DiscoveryBackend is { status: 'UP' }
 ```
 
-> Each **picoservice** service exposes a `/healthcheck` API and you can check it like this `curl http://localhost:9090/healthcheck/<registration_id_if_registered>` or using the `healthCheck` method of the service client
+> Each **picoservice** service exposes a `/healthcheck` API and you can check it like this `curl http://localhost:9090/healthcheck/` or using the `healthCheck` method of the service client
 
 > ⚠️ **health checking** is important: eg you can check periodically the health of the discovery backend. If you detect that it has been restarted you can republish again your picoservice.
 
-### DiscoveryBackend server, status,... on cloud platforms
+### DiscoveryBackend server and Service(s),... on cloud platforms
+
+> ⚠️ this part must be rewritten (something simpler)
 
 When you use a cloud platform and you perform deployment, stop and restart of VM (or container), ... your **"picoservices"** could/shoul exist several times, (eg:if you practice "blue-green" deployment you need several version of the picoservice deployed on several VM or containers), so you could get a list of picoservices with the same name and the same url but with different registration id.
 
-The `DiscoveryBackendServer` instance provides a `checkServices` method that periodically update the status (`UP` or `DOWN`) of the picoservices:
+You'll get the same kind of problem if you use horizontal scalabilty of the picoservice VM (or container)
+
+The `Service` instance provides a `heartbeat` method that periodically updates its registration (with date and time) to the Discovery Backend Server:
 
 ```javascript
-let port = process.env.PORT || 9099;
-let backend = new DiscoveryBackendServer()
-
-backend.start({port: port}, res => {
-  res.when({
-    Failure: error => console.log("😡 Houston? We have a problem!"),
-    Success: port => {
-      console.log(`🌍 pico discovery backend server is started on ${port}`)
-      backend.checkServices({interval: 5000, f: updatedService => {
-        updatedService.when({
-          Failure: failure => console.log(failure.error, failure.service),
-          Success: service => {
-            console.log(`this service ${service.registration} is ${service.status}`)
-          }
-        })
-      }})
-    }
+service.heartbeat({interval: 5000, f: res => {
+  res.when({ // if error -> the backend server is probably down
+    Failure: error => console.log("😡 update registration is ko", error),
+    Success: serviceRecord => console.log("😍 registration updated", serviceRecord)
   })
-})
+}})
 ```
 
-So you can detect if the service (of the list) is `DOWN`, if it's `DOWN`, this is probably a reference of a service deployed on a stopped/removed VM or container. So you can remove it of the list of services of the Discovery Backend Server.
+The `DiscoveryBackendServer` instance provides a `checkServices` method that periodically parses the list of picoservices records and do a healthcheck for each picoservice:
 
-### DiscoveryBackend server and horizontal scalabilty of picoservices on cloud platforms
+```javascript
+backend.checkServices({interval: 5000, f: healthResponse => {
+  healthResponse.when({
+    Failure: error => console.log("⛑", error),
+    Success: record => { // record of directory
+      console.log("❤️", record)
+      let age = (new Date() - new Date(record.date.lastUpdate).getTime()) / 1000
+      console.log("⚠️ age since last update:", age, "record", record)
+    }
+  })
+}})
+```
 
-What happends if you augment the number of VM (or container) hosting your picoservice?
-
-
+So you can calculate the age of the picoservice, and if its age constantly increases, this is probably a picoservice deployed on a stopped/removed VM or container. So you can remove it of the list of the Discovery Backend Server.
 
 ## Performances
 
@@ -433,7 +433,6 @@ Percentage of the requests served within a certain time (ms)
 
 ## TODO
 
-- heartbeat
 - circuit breaker
 - document the source
 - easy method for DiscoveryBackendServer to delete service in the list

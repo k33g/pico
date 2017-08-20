@@ -47,13 +47,15 @@ service.start({port: port}, res => {
     Failure: error => console.log("😡 Houston? We have a problem!"),
     Success: port => {
 
-      service.record.status = "UP"      
-      service.updateRegistration(registration => {
-        registration.when({
+      // heartbeat
+      service.heartbeat({interval: 5000, f: res => {
+        res.when({ // if error -> the backend server is probably down
           Failure: error => console.log("😡 update registration is ko", error),
-          Success: value => console.log("😍 registration updated", value)
+          Success: serviceRecord => console.log("😍 registration updated", serviceRecord)
         })
-      })
+      }})
+        
+
       console.log(`🌍 service is listening on ${port}`)
     }
   })

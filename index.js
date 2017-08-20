@@ -225,10 +225,6 @@ class Service {
   }
 
   createRegistration(callBack) {
-    //this.record.date = {}
-    //this.record.date.creation = new Date()
-    //this.record.date.lastUpdate = new Date()
-    
     this.discoveryBackend.createRegistration(this.record, registrationResult => {
       registrationResult.when({
         Success: registrationId => callBack(Success.of({message: "😃 registration is ok", record: this.record})),
@@ -238,8 +234,6 @@ class Service {
   } // end register
 
   updateRegistration(callBack) {
-    //this.record.date.lastUpdate = new Date()        
-
     this.discoveryBackend.updateRegistration(this.record, registrationResult => {
       registrationResult.when({
         Success: registrationId => callBack(Success.of({message: "😃 registration is updated", record: this.record})),
@@ -262,6 +256,20 @@ class Service {
   delete({uri, f}) { this.add({uri, method:"DELETE", f}) }
   post({uri, f}) { this.add({uri, method:"POST", f}) }  
   put({uri, f}) { this.add({uri, method:"PUT", f}) }
+
+  heartbeat({interval, f}) {
+    function updateStatusOfService(service) {
+      return function() {
+        service.updateRegistration(registration => {
+          registration.when({
+            Failure: error => f(Failure.of(error)),
+            Success: serviceRecord => f(Success.of(serviceRecord))
+          })
+        })
+      }
+    } // end function updateStatusOfService()
+    setInterval(updateStatusOfService(this), interval);  
+  }
 
   start({port}, callback) {
     try {
@@ -326,7 +334,10 @@ class DiscoveryBackendServer {
       let serviceObject = this.servicesDirectory[keyServices].find(item=>item.registration==serviceId)
       let index = this.servicesDirectory[keyServices].indexOf(serviceObject)
       // update and replace the item
+      
+      data.record.date = serviceObject.date
       data.record.date.lastUpdate = new Date()
+
       if (index > -1) {
         this.servicesDirectory[keyServices][index] = data.record
       }
@@ -343,13 +354,13 @@ class DiscoveryBackendServer {
     function updateStatusesOfServices(servicesDirectory) {
       return function() {
         for(var keyServices in servicesDirectory) {
-          servicesDirectory[keyServices].forEach(service => {
-            let client = new Client({service: service})
+          servicesDirectory[keyServices].forEach(serviceRecordInDirectory => {
+            let client = new Client({service: serviceRecordInDirectory})
             client.healthCheck()
-            .then(record => {
-              f(Success.of({record, service}))
+            .then(record => { // record of healthcheck
+              f(Success.of(serviceRecordInDirectory))
             })
-            .catch(error => f(Failure.of({error, service})))
+            .catch(error => f(Failure.of(error)))
           })
         }
       }
