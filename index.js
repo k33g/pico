@@ -225,9 +225,9 @@ class Service {
   }
 
   createRegistration(callBack) {
-    this.record.date = {}
-    this.record.date.creation = new Date()
-    this.record.date.lastUpdate = new Date()
+    //this.record.date = {}
+    //this.record.date.creation = new Date()
+    //this.record.date.lastUpdate = new Date()
     
     this.discoveryBackend.createRegistration(this.record, registrationResult => {
       registrationResult.when({
@@ -238,7 +238,7 @@ class Service {
   } // end register
 
   updateRegistration(callBack) {
-    this.record.date.lastUpdate = new Date()        
+    //this.record.date.lastUpdate = new Date()        
 
     this.discoveryBackend.updateRegistration(this.record, registrationResult => {
       registrationResult.when({
@@ -287,11 +287,16 @@ class DiscoveryBackendServer {
       }
     }})
 
+    // create registration in the directory service
     this.service.post({uri:`/api/services`, f: (request, response) => {
       let data = request.body
       if(this.servicesDirectory[data.keyServices]==undefined) {
         this.servicesDirectory[data.keyServices] = []
       } 
+      data.record.date = {}
+      data.record.date.creation = new Date()
+      data.record.date.lastUpdate = new Date()
+
       this.servicesDirectory[data.keyServices].push(data.record)
       response.sendJson({registration: data.record.registration})
     }})
@@ -304,14 +309,15 @@ class DiscoveryBackendServer {
       if(this.servicesDirectory[keyServices]) { // the service is registered
         let serviceObject = this.servicesDirectory[keyServices].find(item=>item.registration==serviceId)
         let index = this.servicesDirectory[keyServices].indexOf(serviceObject)
-  
+        // delete the item
         if (index > -1) {
           this.servicesDirectory[keyServices].splice(index, 1)
         }
       } 
       response.sendJson({registration: serviceId})
-    }})    
+    }})   
 
+    // update registration in the directory service
     this.service.put({uri:`/api/services`, f: (request, response) => {
       let keyServices = request.params[0]
       let serviceId = request.params[1]
@@ -319,7 +325,8 @@ class DiscoveryBackendServer {
       // update the directory
       let serviceObject = this.servicesDirectory[keyServices].find(item=>item.registration==serviceId)
       let index = this.servicesDirectory[keyServices].indexOf(serviceObject)
-      // replace the item
+      // update and replace the item
+      data.record.date.lastUpdate = new Date()
       if (index > -1) {
         this.servicesDirectory[keyServices][index] = data.record
       }
