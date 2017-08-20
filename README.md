@@ -2,7 +2,7 @@
 
 **Pico** is a library to create HTTP **picoservices**.
 
-- **Pico** is pico: only **one** file with **zero** dependency, less than **600 LOC** and around **17 KB**
+- **Pico** is pico: only **one** file with **zero** dependency, less than **500 SLOC** and around **17 KB**
 - **Pico** is **"☁️ Cloud Native"**
 - **Pico** provides several necessary tools to develop picoservices:
   - `Service`: the core of **Pico** with a embedded simple healthcheck system and a "minimalistic" (but sufficient) router
@@ -296,6 +296,36 @@ discoveryBackend.healthcheck(results => {
 
 > ⚠️ **health checking** is important: eg you can check periodically the health of the discovery backend. If you detect that it has been restarted you can republish again your picoservice.
 
+### DiscoveryBackend server, status,... on cloud platforms
+
+When you use a cloud platform and you perform deployment, stop and restart of VM (or container), ... your **"picoservices"** could/shoul exist several times, (eg:if you practice "blue-green" deployment you need several version of the picoservice deployed on several VM or containers), so you could get a list of picoservices with the same name and the same url but with different registration id.
+
+The `DiscoveryBackendServer` instance provides a `checkServices` method that periodically update the status (`UP` or `DOWN`) of the picoservices:
+
+```javascript
+let port = process.env.PORT || 9099;
+let backend = new DiscoveryBackendServer()
+
+backend.start({port: port}, res => {
+  res.when({
+    Failure: error => console.log("😡 Houston? We have a problem!"),
+    Success: port => {
+      console.log(`🌍 pico discovery backend server is started on ${port}`)
+      backend.checkServices({interval: 5000, f: updatedService => {
+        updatedService.when({
+          Failure: failure => console.log(failure.error, failure.service),
+          Success: service => {
+            console.log(`this service ${service.registration} is ${service.status}`)
+          }
+        })
+      })
+    }
+  })
+})
+```
+
+So you can detect if the service (of the list) is `DOWN`, if it's `DOWN`, this is probably a reference of a service deployed on a stopped/removed VM or container. So you can remove it of the list of services of the Discovery Backend Server.
+
 ## Performances
 
 These part is to read with the usual precautions:
@@ -397,6 +427,7 @@ Percentage of the requests served within a certain time (ms)
 
 ## TODO
 
-- improve discovery backend server | add informations to avoid duplicate records when blue-green deployment or several instances
+- heartbeat
 - circuit breaker
-- do not prevent the start of the service when the backend is unreachable
+- document the source
+- easy method for DiscoveryBackendServer to delete service in the list

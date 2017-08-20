@@ -1,7 +1,7 @@
 const http = require("http");
 const https = require("https");
-
 const url = require("url");
+
 class Wrapper {
   constructor(wrapperValue) {
     this.value = function() {
@@ -10,25 +10,19 @@ class Wrapper {
       return Object.assign({}, {value: wrapperValue}).value 
     }
   }
-  static of(x) {
-    return new this(x)
-  }
+  static of(x) { return new this(x) }
   when(cases) {
     for(var type_name in cases) {
-      if(this.constructor.name == type_name) {
-        return cases[type_name](this.value())
-      }
+      if(this.constructor.name == type_name) { return cases[type_name](this.value()) }
     }
     return cases["_"](this.value())
   }
 }
 
-class Result extends Wrapper {}
 class Success extends Wrapper {}
 class Failure extends Wrapper {}
 class Failures extends Wrapper {}
 class HttpException extends Wrapper {}
-
 
 let fetch = (options) => {
   return new Promise((resolve, reject) => {
@@ -41,23 +35,16 @@ let fetch = (options) => {
         reject(new Error('Failed to load data, status code: ' + response.statusCode))
       }
       const body = []
-      // on content, push it to body
-      response.on('data', (chunk) => body.push(chunk))
-      // resolve promise when terminated
-      response.on('end', () => resolve(body.join('')))
+      response.on('data', (chunk) => body.push(chunk)) // on content, push it to body
+      response.on('end', () => resolve(body.join(''))) // resolve promise when terminated
     })
 
     request.on('error', (err) => reject(err))
 
-    // GET OR DELETE
-    if((request.method=="GET") || (request.method=="DELETE")) {
+    if((request.method=="GET") || (request.method=="DELETE")) { // GET OR DELETE
       request.end()
-    } else {
-      // POST OR PUT
+    } else { // POST OR PUT
       if((request.method=="POST") || (request.method=="PUT")) {
-
-        //console.log("💚", options, options.data)
-
         request.write(options.data)
         request.end()
       } else {
@@ -67,9 +54,7 @@ let fetch = (options) => {
   })
 }
 
-
 class Client {
-  // WIP 🚧
   constructor({service}, ...features) {
     this.service = service
     this.baseUri = service.domain+service.root;
@@ -80,9 +65,7 @@ class Client {
   }
 
   healthCheck() {
-    
     let serviceurl = url.parse(this.service.domain)
-
     var path = this.service.registration !== undefined ? `/healthcheck/` + this.service.registration : `/healthcheck`
     
     return fetch({
@@ -94,7 +77,7 @@ class Client {
       headers:  {"Content-Type": "application/json; charset=utf-8"}
     }).then(data => {
       return JSON.parse(data)
-    }).catch(err => err)  
+    }).catch(error => error)  
   }
 
   callMethod({name, urlParams=[], data=null}) {
@@ -113,15 +96,12 @@ class Client {
       data: data!==null ? JSON.stringify(data) : null
     }).then(data => {
       return JSON.parse(data)
-    }).catch(err => {
-      return err
-    })  
+    }).catch(error => error)  
   }
 }
 
 class Service {
   constructor({discoveryBackend=null, record=null, secure=false}) {
-
     this.discoveryBackend = discoveryBackend
     this.record = record
     this.routes = []
@@ -133,7 +113,6 @@ class Service {
     }
 
     let when500 = (err, request, response) => {
-      console.log(err)
       response.writeHead(500, {"Content-Type": "application/json; charset=utf-8"});
       response.write(JSON.stringify({error: `Internal Server Error`, code: 500}))
       response.end();
@@ -160,10 +139,8 @@ class Service {
     let httpProtocol = secure ? https : http
 
     this.server = httpProtocol.createServer((request, response) => {
-
       try {
-        // no request params with ?something
-
+        // ⚠️ no request params (query string)
         if((request.method=="GET") || (request.method=="DELETE")) {
           let route = this.routes.find(rt => request.url.startsWith(rt.uri) && rt.method == request.method)
           
@@ -173,21 +150,14 @@ class Service {
           } else {
             when404(request, response)
           }
-          
         } else {
           if((request.method=="POST") || (request.method=="PUT")) {
-
-            // --- POST ---
-            if(request.method=="POST") {
+            if(request.method=="POST") { // --- POST ---
               let route = this.routes.find(rt => request.url == rt.uri && rt.method == request.method)
               if(route) {
-
                 const body = []
-                // on content, push it to body
-                request.on('data', (chunk) => body.push(chunk))
-                // resolve promise when terminated
-                request.on('end', () => {
-                  //request.body = body.join('')
+                request.on('data', (chunk) => body.push(chunk)) // on content, push it to body
+                request.on('end', () => { // resolve promise when terminated
                   request.body = JSON.parse(body.join(''))
                   route.f(request, response)
                 })
@@ -196,16 +166,14 @@ class Service {
               } 
             } // --- END POST ---
 
-            // --- PUT ---
-            if(request.method=="PUT") { // Same as POST in fact
+            if(request.method=="PUT") { // --- PUT ---
               let route = this.routes.find(rt => request.url.startsWith(rt.uri) && rt.method == request.method)
-              //let route = this.routes.find(rt => request.url == rt.uri && rt.method == request.method)
               if(route) {
+                // the difference with POST
                 request.params = request.url.split(route.uri)[1].split("/").filter(item => item !== "")
                 const body = []
                 request.on('data', (chunk) => body.push(chunk))
                 request.on('end', () => {
-                  //request.body = body.join('')
                   request.body = JSON.parse(body.join(''))                  
                   route.f(request, response)
                 })
@@ -219,13 +187,10 @@ class Service {
           }
         }
 
-      } catch (error) {
-          when500(error, request, response)
-      }
+      } catch (error) {when500(error, request, response) }
     })
-
-    /* --- health check --- */
-    this.routes.push({
+    
+    this.routes.push({ /* --- health check --- */
       uri: "/healthcheck",
       method: "GET",
       f: (request, response) => {
@@ -239,12 +204,8 @@ class Service {
           } else {
             this.record.status = "UP"
           }
-          response.sendJson({
-            status: this.record.status, 
-            registration: this.record.registration
-          })
-        } else {
-          // eg: for the DiscoveryBackenServer
+          response.sendJson({status: this.record.status, registration: this.record.registration})
+        } else { // eg: for the DiscoveryBackenServer
           response.sendJson({status: "UP"})
         }
       }
@@ -275,40 +236,18 @@ class Service {
     this.record.date = new Date()
     this.discoveryBackend.createRegistration(this.record, registrationResult => {
       registrationResult.when({
-        Success: registrationId => {
-          callBack(Success.of({
-            message: "😃 registration is ok",
-            record: this.record
-          }))
-        },
-        Failure: error => {
-          callBack(Failure.of({
-            message: "😡 registration is ko",
-            error: error
-          }))
-        }
+        Success: registrationId => callBack(Success.of({message: "😃 registration is ok", record: this.record})),
+        Failure: error => callBack(Failure.of({message: "😡 registration is ko", error: error}))
       }) // end when
     }) // end create
   } // end register
 
-
   updateRegistration(callBack) {
     this.record.date = new Date()    
     this.discoveryBackend.updateRegistration(this.record, registrationResult => {
-      
       registrationResult.when({
-        Success: registrationId => {
-          callBack(Success.of({
-            message: "😃 registration is updated",
-            record: this.record
-          }))
-        },
-        Failure: error => {
-          callBack(Failure.of({
-            message: "😡 registration update is ko",
-            error: error
-          }))
-        }
+        Success: registrationId => callBack(Success.of({message: "😃 registration is updated", record: this.record})),
+        Failure: error => callBack(Failure.of({message: "😡 registration update is ko", error: error}))
       }) // end when
     }) 
   } 
@@ -316,41 +255,18 @@ class Service {
   removeRegistration(callBack) {
     this.discoveryBackend.removeRegistration(this.record, registrationResult => {
       registrationResult.when({
-        Success: registrationId => {
-          callBack(Success.of({
-            message: "😃 record is deleted",
-            record: this.record
-          }))
-        },
-        Failure: error => {
-          callBack(Failure.of({
-            message: "😡 delete of record is ko",
-            error: error
-          }))
-        }
+        Success: registrationId => callBack(Success.of({message: "😃 record is deleted", record: this.record})),
+        Failure: error => callBack(Failure.of({message: "😡 delete of record is ko", error: error}))
       }) // end when
     }) // end update
   }
 
-  add({uri, method, f}) {
-    this.routes.push({uri, method, f})
-  }
+  add({uri, method, f}) { this.routes.push({uri, method, f}) }
+  get({uri, f}) { this.add({uri, method:"GET", f}) }
+  delete({uri, f}) { this.add({uri, method:"DELETE", f}) }
+  post({uri, f}) { this.add({uri, method:"POST", f}) }  
+  put({uri, f}) { this.add({uri, method:"PUT", f}) }
 
-  get({uri, f}) {
-    this.add({uri, method:"GET", f})
-  }
-
-  delete({uri, f}) {
-    this.add({uri, method:"DELETE", f})
-  }
-
-  post({uri, f}) {
-    this.add({uri, method:"POST", f})
-  }  
-
-  put({uri, f}) {
-    this.add({uri, method:"PUT", f})
-  }  
   start({port}, callback) {
     try {
       this.server.listen(port)
@@ -363,7 +279,6 @@ class Service {
 
 class DiscoveryBackendServer {
   constructor() {
-
     this.servicesDirectory = {} 
     this.service = new Service({})
 
@@ -401,7 +316,6 @@ class DiscoveryBackendServer {
       response.sendJson({registration: serviceId})
     }})    
 
-
     this.service.put({uri:`/api/services`, f: (request, response) => {
       let keyServices = request.params[0]
       let serviceId = request.params[1]
@@ -420,7 +334,33 @@ class DiscoveryBackendServer {
     this.service.get({uri:`/`, f: (request, response) => {
       response.sendJson({message: "👋 Hello, I'm the pico discovery backend server"})
     }})
+  }
 
+  checkServices({interval, f}) {
+    function updateStatusesOfServices(servicesDirectory) {
+      return function() {
+        for(var keyServices in servicesDirectory) {
+          servicesDirectory[keyServices].forEach(service => {
+            let client = new Client({service: service})
+            client.healthCheck()
+            .then(serviceHealth => {
+              /**
+               * if serviceHealth.status=="DOWN"
+               *   👎 The service with the id serviceHealth.registration is marked to "DOWN"
+               *   It probably belongs to a stopped/removed VM or container
+               * else
+               *   👍 The service with the id serviceHealth.registration is marked to "UP"
+               */
+              // updating the status in the services list
+              service.status = serviceHealth.status
+              f(Success.of(service))
+            })
+            .catch(error => f(Failure.of({error: error, service: service})))
+          })
+        }
+      }
+    } // end function updateStatusesOfServices()
+    setInterval(updateStatusesOfServices(this.servicesDirectory), interval);
   }
 
   start({port}, callback) {
@@ -431,14 +371,12 @@ class DiscoveryBackendServer {
       })
     })
   }
-
 }
 
 let S4 = () => (((1+Math.random())*0x10000)|0).toString(16).substring(1)
 let guid = () => (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase()
 
 class DiscoveryBackend {
-  // WIP 🚧
   constructor({protocol, host, port, keyServices}) {
     this.protocol = protocol
     this.host = host
@@ -448,34 +386,25 @@ class DiscoveryBackend {
 
   healthcheck(callback) {
     fetch({
-      protocol: this.protocol,
-      host: this.host,
-      port: this.port,
+      protocol: this.protocol, host: this.host, port: this.port,
       path: `/healthcheck`,
       method: 'GET',
       headers:  {"Content-Type": "application/json; charset=utf-8"}
-    }).then(data => {
-      // removeRegistration ok      
+    }).then(data => { // removeRegistration ok      
       callback(Success.of(JSON.parse(data)))
-    }).catch(err => {
-      // removeRegistration ko      
+    }).catch(err => { // removeRegistration ko      
       callback(Failure.of(err))
     })
   }
 
   getAllRegistrations(callback) {
-    fetch({
-      protocol: this.protocol,
-      host: this.host,
-      port: this.port,
+    fetch({protocol: this.protocol, host: this.host, port: this.port,
       path: `/api/services/${this.keyServices}`,
       method: 'GET',
       headers:  {"Content-Type": "application/json; charset=utf-8"}
-    }).then(data => {
-      // removeRegistration ok    
+    }).then(data => { // removeRegistration ok    
       callback(Success.of(JSON.parse(data)))
-    }).catch(err => {
-      // removeRegistration ko      
+    }).catch(err => { // removeRegistration ko      
       callback(Failure.of(err))
     })
   }
@@ -511,70 +440,47 @@ class DiscoveryBackend {
   }
 
   createRegistration(record, callback) {
-    //uuid
     record.registration = guid()
-    fetch({
-      protocol: this.protocol,
-      host: this.host,
-      port: this.port,
+    fetch({protocol: this.protocol, host: this.host, port: this.port,
       path: "/api/services",
       method: 'POST',
       data:JSON.stringify({record:record, keyServices: this.keyServices}),
       headers:  {"Content-Type": "application/json; charset=utf-8"}
-    }).then(data => {
-      // registration ok      
+    }).then(data => { // registration ok      
       callback(Success.of(record.registration))
-    }).catch(err => {
-      // registration ko      
+    }).catch(err => { // registration ko      
       callback(Failure.of(err))
     })
   }
 
   removeRegistration(record, callback) {
-    fetch({
-      protocol: this.protocol,
-      host: this.host,
-      port: this.port,
+    fetch({protocol: this.protocol, host: this.host, port: this.port,
       path: `/api/services/${this.keyServices}/${record.registration}`,
       method: 'DELETE',
       headers:  {"Content-Type": "application/json; charset=utf-8"}
-    }).then(data => {
-      // removeRegistration ok      
+    }).then(data => { // removeRegistration ok      
       callback(Success.of(record.registration))
-    }).catch(err => {
-      // removeRegistration ko      
+    }).catch(err => { // removeRegistration ko      
       callback(Failure.of(err))
     })
   }
 
   updateRegistration(record, callback) {
-    fetch({
-      protocol: this.protocol,
-      host: this.host,
-      port: this.port,
+    fetch({protocol: this.protocol, host: this.host, port: this.port,
       path: `/api/services/${this.keyServices}/${record.registration}`,
       method: 'PUT',
       data:JSON.stringify({record:record, keyServices: this.keyServices}),
       headers:  {"Content-Type": "application/json; charset=utf-8"}
-    }).then(data => {      
-      // registration ok      
+    }).then(data => { // registration ok      
       callback(Success.of(record.registration))
-    }).catch(err => {      
-      // registration ko      
+    }).catch(err => { // registration ko      
       callback(Failure.of(err))
     })
   }
 }
 
 module.exports = {
-  Wrapper: Wrapper,
-  Result: Result,
-  Success: Success,  
-  Failure: Failure,
-  Failures: Failures,
-  Service: Service,
-  Client: Client,
-  fetch: fetch,
-  DiscoveryBackendServer: DiscoveryBackendServer,
-  DiscoveryBackend: DiscoveryBackend
+  Wrapper: Wrapper, Success: Success, Failure: Failure, Failures: Failures, fetch: fetch,
+  Service: Service, Client: Client,
+  DiscoveryBackendServer: DiscoveryBackendServer, DiscoveryBackend: DiscoveryBackend
 }
