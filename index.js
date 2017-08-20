@@ -66,21 +66,13 @@ class Client {
 
   healthCheck() {
     let serviceurl = url.parse(this.service.domain)
-    if(this.service.instance == undefined) { 
-      this.service.instance = {} 
-      this.service.instance.id = "monoinstance"
-    }
-    //let instanceId = this.service.registration !== undefined ? this.service.instance.id : "monoinstance"
-    let path = this.service.registration !== undefined 
-      ? `/healthcheck/` + this.service.registration + "/" + this.service.instance.id
-      : `/healthcheck`
     
     return fetch({
       protocol: serviceurl.protocol.slice(0, -1), // remove ":"
       host: serviceurl.hostname,
       port: serviceurl.port,
       method: "GET",
-      path: path,
+      path: `/healthcheck`,
       headers:  {"Content-Type": "application/json; charset=utf-8"}
     }).then(data => {
       return JSON.parse(data)
@@ -202,14 +194,12 @@ class Service {
       method: "GET",
       f: (request, response) => {
         if(record) {
-          let registrationId = request.params[0] 
-          let instanceId = request.params[1] 
           // healthcheck is called by the client with the id of registration
           // if registrationId <> this.record.registration it's because the
           // service should be "on" a stopped VM or container
-          console.log("👩‍⚕️ health checking of ", this.record.registration)
-          console.log("this.record.instance.id", this.record.instance.id, "instanceId", instanceId)
+          console.log("👩‍⚕️ health checking of ", this.record)
           
+          /*
           if(this.record.instance.id==instanceId) { // check that we are on the good instance
             if(this.record.registration!==registrationId) {
               this.record.status = "DOWN"
@@ -217,7 +207,17 @@ class Service {
               this.record.status = "UP"
             }
           }
-          response.sendJson({status: this.record.status, registration: this.record.registration})
+          */
+          // en fait il faut que le service s'enregistre dans le backend
+          // puis poste régulièrement
+          // et le backend il fait quoi pour détecter le truc?
+
+          response.sendJson({
+            status: this.record.status, 
+            registration: this.record.registration, 
+            instance: this.record.instance,
+            hostName: os.hostname()
+          })
         } else { // eg: for the DiscoveryBackenServer
           response.sendJson({status: "UP"})
         }
@@ -356,17 +356,8 @@ class DiscoveryBackendServer {
           servicesDirectory[keyServices].forEach(service => {
             let client = new Client({service: service})
             client.healthCheck()
-            .then(serviceHealth => {
-              /**
-               * if serviceHealth.status=="DOWN"
-               *   👎 The service with the id serviceHealth.registration is marked to "DOWN"
-               *   It probably belongs to a stopped/removed VM or container
-               * else
-               *   👍 The service with the id serviceHealth.registration is marked to "UP"
-               */
-              // updating the status in the services list
-              service.status = serviceHealth.status
-              f(Success.of(service))
+            .then(healthStatus => {
+              f(Success.of({healthStatus, service}))
             })
             .catch(error => f(Failure.of({error: error, service: service})))
           })
