@@ -239,8 +239,8 @@ class Service {
   } // end register
 
   updateRegistration(callBack) {
-    this.record.previousUpdateDate = this.record.lastUpdate
-    this.record.lastUpdate = new Date()     
+    this.record.date.previousUpdate = this.record.date.lastUpdate
+    this.record.date.lastUpdate = new Date()     
     this.discoveryBackend.updateRegistration(this.record, registrationResult => {
       registrationResult.when({
         Success: registrationId => callBack(Success.of({message: "😃 registration is updated", record: this.record})),
