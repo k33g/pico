@@ -336,7 +336,7 @@ class DiscoveryBackendServer {
             let client = new Client({service: service})
             client.healthCheck()
             .then(record => {
-              f(Success.of(record, service))
+              f(Success.of({record, service}))
             })
             .catch(error => f(Failure.of({error, service})))
           })
