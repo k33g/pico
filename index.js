@@ -195,32 +195,10 @@ class Service {
       method: "GET",
       f: (request, response) => {
         if(record) {
-          // healthcheck is called by the client with the id of registration
-          // if registrationId <> this.record.registration it's because the
-          // service should be "on" a stopped VM or container
           console.log("👩‍⚕️ health checking of ", this.record)
-          
-          /*
-          if(this.record.instance.id==instanceId) { // check that we are on the good instance
-            if(this.record.registration!==registrationId) {
-              this.record.status = "DOWN"
-            } else {
-              this.record.status = "UP"
-            }
-          }
-          */
-          // en fait il faut que le service s'enregistre dans le backend
-          // puis poste régulièrement
-          // et le backend il fait quoi pour détecter le truc?
-
-          response.sendJson({
-            status: this.record.status, 
-            registration: this.record.registration, 
-            instance: this.record.instance,
-            hostName: os.hostname()
-          })
+          response.sendJson(this.record)
         } else { // eg: for the DiscoveryBackenServer
-          response.sendJson({status: "UP"})
+          response.sendJson({})
         }
       }
     })
@@ -357,10 +335,10 @@ class DiscoveryBackendServer {
           servicesDirectory[keyServices].forEach(service => {
             let client = new Client({service: service})
             client.healthCheck()
-            .then(healthStatus => {
-              f(Success.of({healthStatus, service}))
+            .then(record => {
+              f(Success.of(record, service))
             })
-            .catch(error => f(Failure.of({error: error, service: service})))
+            .catch(error => f(Failure.of({error, service})))
           })
         }
       }
