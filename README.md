@@ -318,7 +318,7 @@ backend.start({port: port}, res => {
             console.log(`this service ${service.registration} is ${service.status}`)
           }
         })
-      })
+      }})
     }
   })
 })
