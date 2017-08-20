@@ -2,7 +2,7 @@
 
 **Pico** is a library to create HTTP **picoservices**.
 
-- **Pico** is pico: only **one** file with **zero** dependency, less than **600 LOC** and around **17 KB**
+- **Pico** is pico: only **one** file with **zero** dependency, less than **500 SLOC** and around **17 KB**
 - **Pico** is **"☁️ Cloud Native"**
 - **Pico** provides several necessary tools to develop picoservices:
   - `Service`: the core of **Pico** with a embedded simple healthcheck system and a "minimalistic" (but sufficient) router
