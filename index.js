@@ -229,6 +229,7 @@ class Service {
     this.record.date.creation = new Date()
     this.record.date.previousUpdate = new Date()
     this.record.date.lastUpdate = new Date()
+    this.record.date.age = 0
     
     this.discoveryBackend.createRegistration(this.record, registrationResult => {
       registrationResult.when({
@@ -240,7 +241,9 @@ class Service {
 
   updateRegistration(callBack) {
     this.record.date.previousUpdate = this.record.date.lastUpdate
-    this.record.date.lastUpdate = new Date()     
+    this.record.date.lastUpdate = new Date()        
+    this.record.date.age = (this.record.date.lastUpdate.getTime() - this.record.date.previousUpdate.getTime()) / 1000
+
     this.discoveryBackend.updateRegistration(this.record, registrationResult => {
       registrationResult.when({
         Success: registrationId => callBack(Success.of({message: "😃 registration is updated", record: this.record})),
