@@ -1,6 +1,7 @@
-const http = require("http");
-const https = require("https");
-const url = require("url");
+const http = require("http")
+const https = require("https")
+const url = require("url")
+const os = require("os")
 
 class Wrapper {
   constructor(wrapperValue) {
