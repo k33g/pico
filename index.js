@@ -207,22 +207,16 @@ class Service {
           // healthcheck is called by the client with the id of registration
           // if registrationId <> this.record.registration it's because the
           // service should be "on" a stopped VM or container
-          console.log("-------------------------------------------")
-          console.log("this.record.registration", this.record.registration, "registrationId", registrationId)
+          console.log("👩‍⚕️ health checking of ", this.record.registration)
           console.log("this.record.instance.id", this.record.instance.id, "instanceId", instanceId)
-          console.log("-------------------------------------------")
-          if(this.record.registration==registrationId && this.record.instance.id==instanceId) {
-            this.record.status = "UP"
-          } else {
-            this.record.status = "DOWN"
+          
+          if(this.record.instance.id==instanceId) { // check that we are on the good instance
+            if(this.record.registration!==registrationId) {
+              this.record.status = "DOWN"
+            } else {
+              this.record.status = "UP"
+            }
           }
-          /*
-          if(this.record.registration!==registrationId) {
-            this.record.status = "DOWN"
-          } else {
-            this.record.status = "UP"
-          }
-          */
           response.sendJson({status: this.record.status, registration: this.record.registration})
         } else { // eg: for the DiscoveryBackenServer
           response.sendJson({status: "UP"})
