@@ -225,7 +225,11 @@ class Service {
   }
 
   createRegistration(callBack) {
-    this.record.date = new Date()
+    this.record.date = {}
+    this.record.date.creation = new Date()
+    this.record.date.previousUpdate = new Date()
+    this.record.date.lastUpdate = new Date()
+    
     this.discoveryBackend.createRegistration(this.record, registrationResult => {
       registrationResult.when({
         Success: registrationId => callBack(Success.of({message: "😃 registration is ok", record: this.record})),
@@ -235,7 +239,8 @@ class Service {
   } // end register
 
   updateRegistration(callBack) {
-    this.record.date = new Date()    
+    this.record.previousUpdateDate = this.record.lastUpdate
+    this.record.lastUpdate = new Date()     
     this.discoveryBackend.updateRegistration(this.record, registrationResult => {
       registrationResult.when({
         Success: registrationId => callBack(Success.of({message: "😃 registration is updated", record: this.record})),
