@@ -66,7 +66,14 @@ class Client {
 
   healthCheck() {
     let serviceurl = url.parse(this.service.domain)
-    var path = this.service.registration !== undefined ? `/healthcheck/` + this.service.registration : `/healthcheck`
+    if(this.service.instance == undefined) { 
+      this.service.instance = {} 
+      this.service.instance.id = "monoinstance"
+    }
+    //let instanceId = this.service.registration !== undefined ? this.service.instance.id : "monoinstance"
+    let path = this.service.registration !== undefined 
+      ? `/healthcheck/` + this.service.registration + "/" + this.service.instance.id
+      : `/healthcheck`
     
     return fetch({
       protocol: serviceurl.protocol.slice(0, -1), // remove ":"
@@ -196,14 +203,22 @@ class Service {
       f: (request, response) => {
         if(record) {
           let registrationId = request.params[0] 
+          let instanceId = request.params[1] 
           // healthcheck is called by the client with the id of registration
           // if registrationId <> this.record.registration it's because the
           // service should be "on" a stopped VM or container
+          if(this.record.registration==registrationId && this.record.instance.id==instanceId) {
+            this.record.status = "UP"
+          } else {
+            this.record.status = "DOWN"
+          }
+          /*
           if(this.record.registration!==registrationId) {
             this.record.status = "DOWN"
           } else {
             this.record.status = "UP"
           }
+          */
           response.sendJson({status: this.record.status, registration: this.record.registration})
         } else { // eg: for the DiscoveryBackenServer
           response.sendJson({status: "UP"})

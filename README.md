@@ -326,6 +326,12 @@ backend.start({port: port}, res => {
 
 So you can detect if the service (of the list) is `DOWN`, if it's `DOWN`, this is probably a reference of a service deployed on a stopped/removed VM or container. So you can remove it of the list of services of the Discovery Backend Server.
 
+### DiscoveryBackend server and horizontal scalabilty of picoservices on cloud platforms
+
+What happends if you augment the number of VM (or container) hosting your picoservice?
+
+
+
 ## Performances
 
 These part is to read with the usual precautions:
