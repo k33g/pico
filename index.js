@@ -158,7 +158,7 @@ class Service {
                 const body = []
                 request.on('data', (chunk) => body.push(chunk)) // on content, push it to body
                 request.on('end', () => { // resolve promise when terminated
-                  request.body = JSON.parse(body.join(''))
+                  request.body = request.headers['content-type'].startsWith("application/json") ? JSON.parse(body.join('')) : body.join('')
                   route.f(request, response)
                 })
               } else {
@@ -174,7 +174,7 @@ class Service {
                 const body = []
                 request.on('data', (chunk) => body.push(chunk))
                 request.on('end', () => {
-                  request.body = JSON.parse(body.join(''))                  
+                  request.body = request.headers['content-type'].startsWith("application/json") ? JSON.parse(body.join('')) : body.join('')
                   route.f(request, response)
                 })
               } else {
